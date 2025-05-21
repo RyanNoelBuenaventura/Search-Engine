@@ -53,8 +53,8 @@ def Get_Next_File():
     for folder in os.listdir(ANALYST_FOLDER):
         for file in os.listdir(os.path.join(ANALYST_FOLDER, folder)):
             document_path = os.path.join(ANALYST_FOLDER, folder, file)
-            print(document_path)
             with open(document_path, 'r') as json_file:
+                print(document_path)
                 file_content = json.load(json_file)
                 url = file_content['url']
                 file_id = write_FileID_FilePath(document_path, url)
