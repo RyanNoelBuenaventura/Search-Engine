@@ -14,6 +14,7 @@ class SearchLogic:
     def process_query_terms(self, query):
         """
         process query using same logic as M1 word_stem
+        returns list of stem words from the query
         """
         words = query.lower().split()
         processed_terms = []
@@ -59,7 +60,7 @@ class SearchLogic:
         """
         boolean and operation find documents with all query terms
         """
-        # process the query
+        # process the query a list of words as stems from query
         query_terms = self.process_query_terms(query)
         
         if not query_terms:
@@ -90,6 +91,12 @@ class SearchLogic:
         print(f"Found {len(results)} documents")
         return results
 
+def get_url_file(seekpos):
+    with open("FileID_FilePath.txt", "r") as f:
+        f.seek(seekpos)
+        result = f.readline().split(' ==> ')
+    return result
+
 def test_search():
     """
     test search logic with the M2 required queries
@@ -116,10 +123,23 @@ def test_search():
         if results:
             # show top three results sorted by freq
             sorted_results = sorted(results.items(), key = lambda x: x[1], reverse = True)
-            for i, (file_id, freq) in enumerate(sorted_results[:3]):
-                print(f" {i + 1}. File {file_id}: {freq}")
+            for i, (file_id, freq) in enumerate(sorted_results[:5]):
+                doc, url = get_url_file(int(file_id))
+                print(f" {i + 1}. URL {url}: {freq}")
         else:
             print(" No results found")
+
+def Gui_search(query):
+    search = SearchLogic()
+
+    result = search.boolean_and_search(query)
+
+    if result:
+        sorted_results = sorted(result.items(), key = lambda x: x[1], reverse = True)
+        for i, (file_id, freq) in enumerate(sorted_results[:5]):
+            doc, url = get_url_file(int(file_id))
+            yield url
+
 
 if __name__ == "__main__":
     test_search()

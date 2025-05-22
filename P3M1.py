@@ -1,14 +1,15 @@
 import hashlib
 import os
+import re
 import sys
 from pathlib import Path
 from bs4 import BeautifulSoup
 from nltk.stem import PorterStemmer
 import json
-import ast
 import sqlite3
 
-
+document_fingerprints = {}
+document_checksums = set()
 # in postings we might put the tf-idf of that term in that doc
     # we can hard code the num of docs for tf-idf
     # or do one pass and then go through everything again and update tf-idf ounce we know it
@@ -39,12 +40,107 @@ def Get_Next_File():
                 print(document_path)
                 file_content = json.load(json_file)
                 url = file_content['url']
-                file_id = write_FileID_FilePath(document_path, url)
-                parse(file_id, file_content)
-            sql_add()
-        break
+                page_content = file_content['content']
+                if dup_check(page_content, url):
+                    file_id = write_FileID_FilePath(file, url)
+                    parse(file_id, page_content)
+        sql_add()
 
-def parse(file_id, file_content):
+
+def createFingerprint(content, url):
+    """
+    Creates text fingerprints for near duplicate deletion
+    """
+    soup = BeautifulSoup(content, 'html.parser')  # Gets all html data from page
+
+    for element in soup(['script', 'style', 'header', 'footer',
+                         'nav']):  # Removes any type of text specified here
+        element.decompose()
+
+    text = soup.get_text(
+        separator = ' ').lower()  # Gets text from html and seperates by a space if not already there, making everything lowercase too
+
+    text = re.sub(r'\s+', ' ', text).strip()  # Replaces sequences of whitespace with 1 space
+
+    n_length = 5  # Length per fingerprint
+    words = text.split()  # Makes text into individual words for fingerprinting
+
+    # since we have extracted all the words and remvoed html flags it might be best to compare
+    # length to any previous word page length and update if needed
+
+    # this can be used later for word fequency and other things
+
+    # set main url
+    # If too small check
+    if len(words) < n_length:
+        return set()
+
+    # Makes a set of the ngrams that we will create
+    ngrams = set()
+
+    # Creating ngrams, hashing them, and putting them into the set of ngrams for the page
+    for i in range(len(words) - n_length + 1):
+        ngram = ' '.join(words[i:i + n_length])
+        ngram_hash = hashlib.md5(ngram.encode()).hexdigest()
+        ngrams.add(ngram_hash)
+
+    # Maybe error checks here??
+
+    return ngrams
+# checks for exact duplicates to existing websites
+def exactDupe(content):
+    # creates hash of current site text
+    current_hash = hashlib.md5(content.encode()).hexdigest()
+
+    # checks doc against other hashes created and looks for a match, returning True if match found
+    if current_hash in document_checksums:
+        print(f"Exact dupe detected. Hash: {current_hash}")
+        return True
+
+    # if not found add to list of unique websites
+    document_checksums.add(current_hash)
+
+    return False
+
+
+def nearDupe(content, url):
+    similarity_limit = 0.7
+    # Using createFingerprint to get the fingerprint of the site of interest
+    current_fingerprint = createFingerprint(content, url)
+
+    if len(current_fingerprint) < 10:  # Doc too small or fingerprint failed
+        return False
+
+    # Compares documents and finds the words in common from the fingerprints
+    for seenUrl, seenFingerprint in document_fingerprints.items():
+        if len(seenFingerprint) > 0:
+            intersection = len(current_fingerprint.intersection(seenFingerprint))
+            union = len(current_fingerprint.union(seenFingerprint))
+
+            # If union exists, calculate similarity level
+            if union > 0:
+                similarity = intersection / union
+            else:
+                similarity = 0
+
+            # Similarity checker, returns true if its similar enough
+            if similarity >= similarity_limit:
+                return True
+
+    # If not similar enough store fingerprint for future comparisons and return false
+    document_fingerprints[url] = current_fingerprint
+    return False
+
+def dup_check(content, url):
+    if exactDupe(content):
+        return False
+
+    if nearDupe(content, url):
+        return False
+
+    return True
+
+def parse(file_id, page_content):
     """
     this extracts paragraphs and strong html tags from the page content
     then using porter stemming we turn each work into it's root words hash it and set as the
@@ -53,16 +149,16 @@ def parse(file_id, file_content):
     :param url: the url of the page from the analyst file
     :return:
     """
-
-    page_content = file_content['content']
-    text = (BeautifulSoup(page_content, 'html.parser'))
-    words_in_html = text.find_all(['p', 'strong'])
-    for t in words_in_html:
-        for word in t.text.split():
-            stem = word_stem(word)
-            if stem.isalpha():
-                print(stem, file_id)
-                indexer(stem, file_id)
+    try:
+        text = (BeautifulSoup(page_content, 'html.parser'))
+        words_in_html = text.find_all(['p', 'strong'])
+        for t in words_in_html:
+            for word in t.text.split():
+                stem = word_stem(word)
+                if stem.isalpha():
+                    indexer(stem, file_id)
+    except Exception as e:
+        return
 
 def word_stem(word):
     """
@@ -176,6 +272,7 @@ def report():
             for elem in update_elem:
                 file.write(elem)
 
-connect_sql()
-Get_Next_File()
-report()
+if __name__ == "__main__":
+    connect_sql()
+    Get_Next_File()
+    report()
