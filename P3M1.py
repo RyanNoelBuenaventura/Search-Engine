@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from nltk.stem import PorterStemmer
 import json
 import ast
+import sqlite3
 
 
 # in postings we might put the tf-idf of that term in that doc
@@ -19,6 +20,7 @@ inverted_index = {} #key hashed stems value list with path, frequency count.
 indexed_doc_cnt = [0]
 helper_files = ["FileID_FilePath.txt"]
 file_index_alphabet = {}
+sql_cursor = None
 
 def Get_Next_File():
     """
@@ -39,7 +41,7 @@ def Get_Next_File():
                 url = file_content['url']
                 file_id = write_FileID_FilePath(document_path, url)
                 parse(file_id, file_content)
-            write_inverted_index()
+            sql_add()
         break
 
 
@@ -107,56 +109,45 @@ def write_FileID_FilePath(FilePath, url):
         f.write(FilePath + " ==> " + url + '\n')
     return Seek_Pos
 
-def find_in_File_Index(seek_pos, key_stem, f):
-    f.seek(seek_pos)
-    while f.readline():
-        line = f.readline()
-        line_in_stem = line.split()
-        if len(line_in_stem) == 0 or key_stem[0] > line_in_stem[0]:
-            file_index_alphabet[key_stem[0]] = f.tell()
-            #add something here to check if we need
-            # to update the alpha index since we might insert at the end of a
-            return -1, f.tell()
 
-        elif line_in_stem[0] == key_stem:
-            return line, f.tell()
-    return -1, f.tell()
-
-
-def extract_index_elem(line):
-    new_line = line.split(' --> ')
-    stem = new_line[0]
-    stem_posting = ast.literal_eval(new_line[1])
-    return stem, stem_posting
-
-def write_inverted_index():
+def connect_sql():
     """
-    writes what the inverted index dictionary currently looks like
-    stem_word --> {offset location in FileID_FilePath.txt : frequency of word in file}
-    --> current cursor location offset in File_Index.txt
+    call at start and delete before re-run
     :return:
     """
+    sql_file = sqlite3.connect("text.db")
+    cursor = sql_file.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS entries(
+        id TEXT PRIMARY KEY,
+        data TEXT
+        )
+    """)
+
+    sql_file.commit()
+    sql_file.close()
+
+def sql_add():
+    sql_file = sqlite3.connect("text.db")
+    cursor = sql_file.cursor()
+
     inverted_index1 = dict(sorted(inverted_index.items()))
-    with open('File_Index.txt1', 'a+', encoding = 'utf-8') as f:
-        for key, value in inverted_index1.items():
-            if key[0] not in file_index_alphabet.keys():
-                file_index_alphabet[key[0]] = f.tell()
-                f.write(key + " --> " + str(value) + '\n')
-            else:
-                line, line_pos = find_in_File_Index(file_index_alphabet[key[0]], key, f)
-                if line == -1:
-                    f.seek(line_pos)
-                    f.write(key + " --> " + str(value) + '\n')
-                else:
-                    stem, postings = extract_index_elem(line)
-                    postings.update(value)
-                    postings = dict(sorted(postings.items(), key=lambda x: x[1], reverse=True))
-                    print(key + " --> " + str(postings) + '\n')
-                    f.write(key + " --> " + str(postings) + '\n')
-        f.seek(135)
-        print(f"seek: {f.tell()}")
-        print(f"result: {str(f.readline())}")
+    for key, value in inverted_index1.items():
+        cursor.execute("SELECT * FROM entries WHERE id = ?", (key,))
+        result_tuple = cursor.fetchone()
+        if result_tuple:
+            dict_data = json.loads(result_tuple[1])
+            dict_data.update(value)
+            value = dict(sorted(dict_data.items(), key = lambda x: x[1], reverse = True))
+            cursor.execute("UPDATE entries SET data = ? WHERE id = ?", (json.dumps(value), key,))
+        else:
+            cursor.execute("INSERT INTO entries VALUES(?,?)", (key, json.dumps(value),))
+        sql_file.commit()
+    sql_file.close()
+
     inverted_index.clear()
+    inverted_index1.clear()
 
 
 def report():
@@ -188,5 +179,6 @@ def report():
             for elem in update_elem:
                 file.write(elem)
 
+connect_sql()
 Get_Next_File()
 report()
