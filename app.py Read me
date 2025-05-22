@@ -1,0 +1,11 @@
+steps; 
+1. either or if your on python 3 use 
+  1.1 pip install streamlit
+  1.2 pip3 install streamlit
+  might need to update pip if it's old 
+
+2. running it
+   2.1 in termina enter:
+    streamlit run app.py
+
+
