@@ -2,20 +2,35 @@ Search Results Report
 ==================================================
 
 Query: cristina lopes
-No results found.
+Top 5 URLs:
+1. https://www.informatics.uci.edu/2017/08/
+2. https://www.informatics.uci.edu/lopes-featured-speaker-at-2016-opensimulator-community-conference/#content
+3. https://www.informatics.uci.edu/very-top-footer-menu-items/news/page/32/
+4. https://www.informatics.uci.edu/2017/01/
+5. https://www.informatics.uci.edu/lopes-analyzes-big-code-with-funding-from-darpa/#content
 
 Query: machine learning
-No results found.
+Top 5 URLs:
+1. https://www.cs.uci.edu/multidisciplinary-graduate-training-program-advances-wildfire-prediction-research/#more-2503
+2. https://www.cs.uci.edu/news/page/16/
+3. https://www.cs.uci.edu/professor-singh-awarded-two-nsf-grants-to-advance-machine-learning/
+4. https://www.cs.uci.edu/news/
+5. https://www.cs.uci.edu/husky-or-wolf-using-a-black-box-learning-model-to-avoid-adoption-errors/
 
 Query: ACM
 Top 5 URLs:
-1. Error reading file_id 1407: '<' not supported between instances of 'str' and 'int'
-2. Error reading file_id 4802: '<' not supported between instances of 'str' and 'int'
-3. Error reading file_id 4995: '<' not supported between instances of 'str' and 'int'
-4. Error reading file_id 5195: '<' not supported between instances of 'str' and 'int'
-5. Error reading file_id 2597: '<' not supported between instances of 'str' and 'int'
+1. http://www-db.ics.uci.edu/pages/research/mars.shtml
+2. http://www-db.ics.uci.edu/pages/links/conferences.shtml
+3. https://www.informatics.uci.edu/two-ics-professors-named-2015-acm-fellows/#content
+4. https://www.informatics.uci.edu/mark-elected-to-acm-chi-academy-for-2017/#content
+5. https://www.cs.uci.edu/news/page/20/
 
 Query: master of software engineering
-No results found.
+Top 5 URLs:
+1. https://www.cs.uci.edu/art-and-computers-symposium/acsymposium-speakers/#elementor-action%3Aaction%3Dpopup%3Aclose%20settings%3DeyJkb19ub3Rfc2hvd19hZ2FpbiI6IiJ9
+2. https://www.informatics.uci.edu/training-tomorrows-software-engineers/#content
+3. https://www.cs.uci.edu/ics-students-win-best-web-app-at-hacksc/#more-2265
+4. https://www.informatics.uci.edu/grad/mswe/
+5. https://www.informatics.uci.edu/grad/overview/
 
 End of Report

@@ -101,9 +101,9 @@ class ResultFormatter:
         try:
             with open(self.file_mapping_path, 'r') as f:
                 # seek to the byte position
-                f.seek(file_id)
+                f.seek(int(file_id))
                 line = f.readline().strip()
-                
+
                 if ' ==> ' in line:
                     file_path, url = line.split(' ==> ', 1)
                     return url
@@ -194,6 +194,17 @@ class ResultFormatter:
                     print(formatted)
                 else:
                     print("Not in indexed queries. Try another term: ")
+
+def Gui_search(query):
+    all_results = []
+
+    search = SearchLogic()
+    formatter = ResultFormatter()
+    results = search.boolean_and_search(query)
+
+    formatted_result = formatter.formatted_results(results, query)
+    all_results.append(formatted_result)
+    return all_results
 
 def test_search():
     """
