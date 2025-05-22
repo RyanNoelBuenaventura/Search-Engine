@@ -1,6 +1,6 @@
-total unique tokens 1465
+total unique tokens 0
 --------------------
-Total indexed pages without intersections 3029
+Total indexed pages without intersections 0
 --------------------
-Total size is 51968 in bytes
+Total size is 64 in bytes
 --------------------
