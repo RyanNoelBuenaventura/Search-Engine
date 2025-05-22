@@ -1,0 +1,21 @@
+Search Results Report
+==================================================
+
+Query: cristina lopes
+No results found.
+
+Query: machine learning
+No results found.
+
+Query: ACM
+Top 5 URLs:
+1. Error reading file_id 1407: '<' not supported between instances of 'str' and 'int'
+2. Error reading file_id 4802: '<' not supported between instances of 'str' and 'int'
+3. Error reading file_id 4995: '<' not supported between instances of 'str' and 'int'
+4. Error reading file_id 5195: '<' not supported between instances of 'str' and 'int'
+5. Error reading file_id 2597: '<' not supported between instances of 'str' and 'int'
+
+Query: master of software engineering
+No results found.
+
+End of Report

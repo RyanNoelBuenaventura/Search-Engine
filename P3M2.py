@@ -90,11 +90,117 @@ class SearchLogic:
         print(f"Found {len(results)} documents")
         return results
 
+class ResultFormatter:
+    #initialize file mapping
+    def __init__(self, file_map = "FileID_FilePath.txt"):
+        self.file_mapping_path = file_map
+        print(f"ResultFormatter initialized w/: {file_map}")
+    
+    def get_url_for_file_id(self, file_id):
+        # reads existing FileID_FilePath.txt to get URL for file_id
+        try:
+            with open(self.file_mapping_path, 'r') as f:
+                # seek to the byte position
+                f.seek(file_id)
+                line = f.readline().strip()
+                
+                if ' ==> ' in line:
+                    file_path, url = line.split(' ==> ', 1)
+                    return url
+                else:
+                    return f"URL not found for file_id: {file_id}"
+                    
+        except FileNotFoundError:
+            return f"File mapping not found: {self.file_mapping_path}"
+        except Exception as e:
+            return f"Error reading file_id {file_id}: {str(e)}"
+    
+    def sort_results_by_relevance(self, search_results):
+
+        if not search_results:
+            return []
+        
+        # sort by term frequency descending
+        sorted_results = sorted(search_results.items(), 
+                              key=lambda item: item[1], reverse=True)
+        
+        return sorted_results
+    
+    def formatted_results(self, search_results, query, max_results=5):
+    
+        # formats search results, returning formatted string with top URLs
+        output_lines = []
+        output_lines.append(f"Query: {query}")
+        
+        if not search_results:
+            output_lines.append("No results found.")
+            return "\n".join(output_lines)
+        
+        # sorting results by relevance
+        sorted_results = self.sort_results_by_relevance(search_results)
+        
+        # adding top URLs
+        output_lines.append(f"Top {min(max_results, len(sorted_results))} URLs:")
+        
+        for i, (file_id, frequency) in enumerate(sorted_results[:max_results], 1):
+            url = self.get_url_for_file_id(file_id)
+            output_lines.append(f"{i}. {url}")
+        
+        return "\n".join(output_lines)
+    
+    def create_report_file(self, all_query_results):
+        # creates report file
+        try:
+            with open("M2_Report.txt", 'w') as f:
+                f.write("Search Results Report\n")
+                f.write("="*50 + "\n\n")
+                
+                for result_text in all_query_results:
+                    f.write(result_text)
+                    f.write("\n\n")
+                
+                f.write("End of Report\n")
+            
+            print("M2 report saved to: M2_Report.txt")
+            return True
+            
+        except Exception as e:
+            print(f"Error creating report file: {e}")
+            return False
+    
+
+    def search_demo(self, search_function=None):
+        
+        # testing search implementation
+        print("\n" + "="*50)
+        print("SEARCH DEMO")
+        print("="*50)
+        
+        if search_function is None:
+            print("Search function was not succcessfully connected. Try again.")
+            return
+        else:
+            # connection successful
+            print("Enter queries (q to quit):")
+            
+            while True:
+                query = input("Search> ").strip()
+                if query.lower() in ['quit', 'exit', 'q']:
+                    break
+                elif query:
+                    # utilizes search to display results
+                    results = search_function(query)
+                    formatted = self.formatted_results(results, query, max_results=10)
+                    print(formatted)
+                else:
+                    print("Not in indexed queries. Try another term: ")
+
 def test_search():
     """
     test search logic with the M2 required queries
     """
     search = SearchLogic()
+    formatter = ResultFormatter()
     
     # test queries
     test_queries = [
@@ -107,19 +213,21 @@ def test_search():
     print("M2 Search Testing")
     print("="*40)
     
+    all_results = []
+    
     for query in test_queries:
         print(f"\nQuery: '{query}'")
         print("-" * 20)
         
         results = search.boolean_and_search(query)
-        
-        if results:
-            # show top three results sorted by freq
-            sorted_results = sorted(results.items(), key = lambda x: x[1], reverse = True)
-            for i, (file_id, freq) in enumerate(sorted_results[:3]):
-                print(f" {i + 1}. File {file_id}: {freq}")
-        else:
-            print(" No results found")
+        formatted_result = formatter.formatted_results(results, query)
+        print(formatted_result)
+        all_results.append(formatted_result)
+    
+    formatter.create_report_file(all_results)
+    
+    # run search demo
+    formatter.search_demo(search.boolean_and_search)
 
 if __name__ == "__main__":
     test_search()
