@@ -30,7 +30,7 @@ def Get_Next_File():
     :return:
     """
 
-    ANALYST_FOLDER = str(Path.cwd()) + """\\analyst\\ANALYST"""
+    ANALYST_FOLDER = str(Path.cwd()) + """/analyst/ANALYST"""
 
     for folder in os.listdir(ANALYST_FOLDER):
         for file in os.listdir(os.path.join(ANALYST_FOLDER, folder)):
