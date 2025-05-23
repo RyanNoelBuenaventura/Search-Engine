@@ -29,10 +29,13 @@ def Get_Next_File():
     :return:
     """
 
-    ANALYST_FOLDER = str(Path.cwd()) + """/analyst/ANALYST"""
-
+    ANALYST_FOLDER = str(Path.cwd()) + """/DEV"""
+    cnt = 0
     for folder in os.listdir(ANALYST_FOLDER):
         for file in os.listdir(os.path.join(ANALYST_FOLDER, folder)):
+            if cnt >= 400:
+                write_index_to_file()
+                cnt = 0
             document_path = os.path.join(ANALYST_FOLDER, folder, file)
             with open(document_path, 'r') as json_file:
                 print(document_path)
@@ -42,7 +45,8 @@ def Get_Next_File():
                 if dup_check(page_content, url):
                     file_id = write_FileID_FilePath(file, url)
                     parse(file_id, page_content)
-        write_index_to_file()
+            cnt +=1
+
 
 
 def createFingerprint(content, url):
@@ -149,7 +153,7 @@ def parse(file_id, page_content):
     """
     try:
         text = (BeautifulSoup(page_content, 'html.parser'))
-        words_in_html = text.find_all(['p', 'strong'])
+        words_in_html = text.find_all(['p', 'strong', 'b', 'h1', 'h2', 'h3', 'title'])
         for t in words_in_html:
             for word in t.text.split():
                 stem = word_stem(word)
