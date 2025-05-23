@@ -205,7 +205,34 @@ class ResultFormatter:
         except Exception as e:
             print(f"Error creating report file: {e}")
             return False
+    
+
+    def search_demo(self, search_function=None):
         
+        # testing search implementation
+        print("\n" + "="*50)
+        print("SEARCH DEMO")
+        print("="*50)
+        
+        if search_function is None:
+            print("Search function was not succcessfully connected. Try again.")
+            return
+        else:
+            # connection successful
+            print("Enter queries (q to quit):")
+            
+            while True:
+                query = input("Search> ").strip()
+                if query.lower() in ['quit', 'exit', 'q']:
+                    break
+                elif query:
+                    # utilizes search to display results
+                    results = search_function(query)
+                    formatted = self.formatted_results(results, query, max_results=10)
+                    print(formatted)
+                else:
+                    print("Not in indexed queries. Try another term: ")
+
 def Gui_search(query):
     all_results = []
 
@@ -216,3 +243,40 @@ def Gui_search(query):
     formatted_result = formatter.formatted_results(results, query)
     all_results.append(formatted_result)
     return all_results
+
+def test_search():
+    """
+    test search logic with the M2 required queries
+    """
+    search = SearchLogic()
+    formatter = ResultFormatter()
+    
+    # test queries
+    test_queries = [
+        "cristina lopes",
+        "machine learning", 
+        "ACM",
+        "master of software engineering"
+    ]
+    
+    print("M2 Search Testing")
+    print("="*40)
+    
+    all_results = []
+    
+    for query in test_queries:
+        print(f"\nQuery: '{query}'")
+        print("-" * 20)
+        
+        results = search.boolean_and_search(query)
+        formatted_result = formatter.formatted_results(results, query)
+        print(formatted_result)
+        all_results.append(formatted_result)
+    
+    formatter.create_report_file(all_results)
+    
+    # run search demo
+    formatter.search_demo(search.boolean_and_search)
+
+if __name__ == "__main__":
+    test_search()
