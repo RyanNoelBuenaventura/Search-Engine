@@ -3,34 +3,34 @@ Search Results Report
 
 Query: cristina lopes
 Top 5 URLs:
-1. https://www.informatics.uci.edu/2017/08/
-2. https://www.informatics.uci.edu/lopes-featured-speaker-at-2016-opensimulator-community-conference/#content
-3. https://www.informatics.uci.edu/very-top-footer-menu-items/news/page/32/
-4. https://www.informatics.uci.edu/2017/01/
-5. https://www.informatics.uci.edu/lopes-analyzes-big-code-with-funding-from-darpa/#content
+1. https://www.informatics.uci.edu/alumni-spotlight-googles-rosalva-gallardo-12-advances-tech-education-in-peru/
+2. URL not found for file_id: 80525
+3. URL not found for file_id: 92238
+4. URL not found for file_id: 93017
+5. URL not found for file_id: 116365
 
 Query: machine learning
 Top 5 URLs:
-1. https://www.cs.uci.edu/multidisciplinary-graduate-training-program-advances-wildfire-prediction-research/#more-2503
-2. https://www.cs.uci.edu/news/page/16/
-3. https://www.cs.uci.edu/professor-singh-awarded-two-nsf-grants-to-advance-machine-learning/
-4. https://www.cs.uci.edu/news/
-5. https://www.cs.uci.edu/husky-or-wolf-using-a-black-box-learning-model-to-avoid-adoption-errors/
+1. URL not found for file_id: 49852
+2. URL not found for file_id: 43471
+3. URL not found for file_id: 36935
+4. URL not found for file_id: 52064
+5. https://www.cs.uci.edu/tsudik-receives-2017-acm-sigsac-outstanding-contributions-award/
 
 Query: ACM
 Top 5 URLs:
 1. http://www-db.ics.uci.edu/pages/research/mars.shtml
 2. http://www-db.ics.uci.edu/pages/links/conferences.shtml
-3. https://www.informatics.uci.edu/two-ics-professors-named-2015-acm-fellows/#content
-4. https://www.informatics.uci.edu/mark-elected-to-acm-chi-academy-for-2017/#content
-5. https://www.cs.uci.edu/news/page/20/
+3. https://www.informatics.uci.edu/slate-monotasking-mark-quoted/
+4. https://www.informatics.uci.edu/very-top-footer-menu-items/news/page/8/
+5. URL not found for file_id: 12750
 
 Query: master of software engineering
 Top 5 URLs:
-1. https://www.cs.uci.edu/art-and-computers-symposium/acsymposium-speakers/#elementor-action%3Aaction%3Dpopup%3Aclose%20settings%3DeyJkb19ub3Rfc2hvd19hZ2FpbiI6IiJ9
-2. https://www.informatics.uci.edu/training-tomorrows-software-engineers/#content
-3. https://www.cs.uci.edu/ics-students-win-best-web-app-at-hacksc/#more-2265
-4. https://www.informatics.uci.edu/grad/mswe/
-5. https://www.informatics.uci.edu/grad/overview/
+1. URL not found for file_id: 28025
+2. https://www.informatics.uci.edu/student-spotlight-uci-helps-jose-vargas-realize-anything-is-possible/
+3. URL not found for file_id: 35335
+4. URL not found for file_id: 159014
+5. URL not found for file_id: 168776
 
 End of Report

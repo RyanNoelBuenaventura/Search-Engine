@@ -6,7 +6,6 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from nltk.stem import PorterStemmer
 import json
-import sqlite3
 
 document_fingerprints = {}
 document_checksums = set()
@@ -21,7 +20,6 @@ inverted_index = {} #key hashed stems value list with path, frequency count.
 indexed_doc_cnt = [0]
 helper_files = ["FileID_FilePath.txt"]
 file_index_alphabet = {}
-sql_cursor = None
 
 def Get_Next_File():
     """
@@ -44,12 +42,12 @@ def Get_Next_File():
                 if dup_check(page_content, url):
                     file_id = write_FileID_FilePath(file, url)
                     parse(file_id, page_content)
-        sql_add()
+        write_index_to_file()
 
 
 def createFingerprint(content, url):
     """
-    Creates text fingerprints for near duplicate deletion
+    creates text fingerprints for near duplicate deletion
     """
     soup = BeautifulSoup(content, 'html.parser')  # Gets all html data from page
 
@@ -62,8 +60,8 @@ def createFingerprint(content, url):
 
     text = re.sub(r'\s+', ' ', text).strip()  # Replaces sequences of whitespace with 1 space
 
-    n_length = 5  # Length per fingerprint
-    words = text.split()  # Makes text into individual words for fingerprinting
+    n_length = 5  # length per fingerprint
+    words = text.split()  # makes text into individual words for fingerprinting
 
     # since we have extracted all the words and remvoed html flags it might be best to compare
     # length to any previous word page length and update if needed
@@ -71,20 +69,20 @@ def createFingerprint(content, url):
     # this can be used later for word fequency and other things
 
     # set main url
-    # If too small check
+    # if too small check
     if len(words) < n_length:
         return set()
 
-    # Makes a set of the ngrams that we will create
+    # makes a set of the ngrams that we will create
     ngrams = set()
 
-    # Creating ngrams, hashing them, and putting them into the set of ngrams for the page
+    # creating ngrams, hashing them, and putting them into the set of ngrams for the page
     for i in range(len(words) - n_length + 1):
         ngram = ' '.join(words[i:i + n_length])
         ngram_hash = hashlib.md5(ngram.encode()).hexdigest()
         ngrams.add(ngram_hash)
 
-    # Maybe error checks here??
+    # maybe error checks here??
 
     return ngrams
 # checks for exact duplicates to existing websites
@@ -105,29 +103,29 @@ def exactDupe(content):
 
 def nearDupe(content, url):
     similarity_limit = 0.7
-    # Using createFingerprint to get the fingerprint of the site of interest
+    # using createFingerprint to get the fingerprint of the site of interest
     current_fingerprint = createFingerprint(content, url)
 
-    if len(current_fingerprint) < 10:  # Doc too small or fingerprint failed
+    if len(current_fingerprint) < 10:  # doc too small or fingerprint failed
         return False
 
-    # Compares documents and finds the words in common from the fingerprints
+    # compares documents and finds the words in common from the fingerprints
     for seenUrl, seenFingerprint in document_fingerprints.items():
         if len(seenFingerprint) > 0:
             intersection = len(current_fingerprint.intersection(seenFingerprint))
             union = len(current_fingerprint.union(seenFingerprint))
 
-            # If union exists, calculate similarity level
+            # if union exists, calculate similarity level
             if union > 0:
                 similarity = intersection / union
             else:
                 similarity = 0
 
-            # Similarity checker, returns true if its similar enough
+            # similarity checker, returns true if its similar enough
             if similarity >= similarity_limit:
                 return True
 
-    # If not similar enough store fingerprint for future comparisons and return false
+    # if not similar enough store fingerprint for future comparisons and return false
     document_fingerprints[url] = current_fingerprint
     return False
 
@@ -202,53 +200,51 @@ def write_FileID_FilePath(FilePath, url):
         f.write(FilePath + " ==> " + url + '\n')
     return Seek_Pos
 
-
-def connect_sql():
-    """
-    call at start and delete before re-run
-    :return:
-    """
-    sql_file = sqlite3.connect("text.db")
-    cursor = sql_file.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS entries(
-        id TEXT PRIMARY KEY,
-        data TEXT
-        )
-    """)
-
-    sql_file.commit()
-    sql_file.close()
-
-def sql_add():
-    sql_file = sqlite3.connect("text.db")
-    cursor = sql_file.cursor()
-
-    inverted_index1 = dict(sorted(inverted_index.items()))
-    for key, value in inverted_index1.items():
-        cursor.execute("SELECT * FROM entries WHERE id = ?", (key,))
-        result_tuple = cursor.fetchone()
-        if result_tuple:
-            dict_data = json.loads(result_tuple[1])
-            dict_data.update(value)
-            value = dict(sorted(dict_data.items(), key = lambda x: x[1], reverse = True))
-            cursor.execute("UPDATE entries SET data = ? WHERE id = ?", (json.dumps(value), key,))
+def write_index_to_file():
+    # sort the index alphabetically
+    sorted_index = dict(sorted(inverted_index.items()))
+    
+    # load existing index if it exists
+    existing_index = {}
+    try:
+        with open('inverted_index.json', 'r') as f:
+            existing_index = json.load(f)
+    except FileNotFoundError:
+        pass
+    
+    # merge current index with existing index
+    for term, postings in sorted_index.items():
+        if term in existing_index:
+            # merge postings
+            for file_id, freq in postings.items():
+                if str(file_id) in existing_index[term]:
+                    existing_index[term][str(file_id)] += freq
+                else:
+                    existing_index[term][str(file_id)] = freq
+            # Sort by frequency
+            existing_index[term] = dict(sorted(existing_index[term].items(), 
+                                             key=lambda x: x[1], reverse=True))
         else:
-            cursor.execute("INSERT INTO entries VALUES(?,?)", (key, json.dumps(value),))
-        sql_file.commit()
-    sql_file.close()
-
+            existing_index[term] = {str(k): v for k, v in postings.items()}
+    
+    # write back to file
+    with open('inverted_index.json', 'w') as f:
+        json.dump(existing_index, f, indent=2)
+    
+    # clear memory
     inverted_index.clear()
-    inverted_index1.clear()
+    print(f"Index written to file. Memory cleared.")
 
 
 def report():
-    """this should make and write to the file i added a try and except in general
-        just incase to keep the crawel from crashing since this is untested"""
+    """this should make and write to the file i added a try and except in general"""
 
-    total_unique_tokens = len(inverted_index.keys())
     try:
+        with open('inverted_index.json', 'r') as f:
+            final_index = json.load(f)
+        
+        total_unique_tokens = len(final_index.keys())
+        
         with open('Report.txt', 'w') as f:
             # longest url and the number of words
             f.write(
@@ -260,19 +256,15 @@ def report():
 
             f.write("-" * 20 + "\n")
 
-            f.write(f"Total size is {sys.getsizeof(inverted_index)} in bytes\n")
+            import os
+            index_size = os.path.getsize('inverted_index.json')
+            f.write(f"Total size is {index_size} in bytes\n")
 
             f.write("-" * 20 + "\n")
 
     except Exception as e:
         print(f"Error writing to Report.txt: {e}")
 
-    def write_to_disk(update_elem):
-        with open('inverted index.json', 'w') as file:
-            for elem in update_elem:
-                file.write(elem)
-
 if __name__ == "__main__":
-    connect_sql()
     Get_Next_File()
     report()

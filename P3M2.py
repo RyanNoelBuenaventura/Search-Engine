@@ -1,4 +1,3 @@
-import sqlite3
 import json
 from nltk.stem import PorterStemmer
 
@@ -7,9 +6,23 @@ class SearchLogic:
     search logic using M1 database
     """
     
-    def __init__(self, db_path="text.db"):
-        self.db_path = db_path
+    def __init__(self, index_path="inverted_index.json"):
+        self.index_path = index_path
         self.stemmer = PorterStemmer()
+        self.inverted_index = self._load_index()
+    
+    def _load_index(self):
+        try:
+            with open(self.index_path, 'r') as f:
+                index = json.load(f)
+            print(f"Loaded index with {len(index)} terms")
+            return index
+        except FileNotFoundError:
+            print(f"Index file {self.index_path} not found!")
+            return {}
+        except Exception as e:
+            print(f"Error loading index: {e}")
+            return {}
     
     def process_query_terms(self, query):
         """
@@ -33,27 +46,9 @@ class SearchLogic:
     
     def fetch_term_postings(self, term):
         """
-        get postings for a term from existing SQLite database
+        get postings for a term from existing database
         """
-        try:
-            # connect to database
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            # query using table structure
-            cursor.execute("select data from entries where id = ?", (term,))
-            result = cursor.fetchone()
-            conn.close()
-            
-            if result:
-                # parse the JSON data stored in M1
-                return json.loads(result[0])
-            # term not found
-            else:
-                return {}
-                
-        except Exception as e:
-            print(f"Error for term '{term}': {e}")
-            return {}
+        return self.inverted_index.get(term, {})
     
     def boolean_and_search(self, query):
         """
@@ -91,29 +86,43 @@ class SearchLogic:
         return results
 
 class ResultFormatter:
-    #initialize file mapping
+    # initialize file mapping
     def __init__(self, file_map = "FileID_FilePath.txt"):
         self.file_mapping_path = file_map
+        self.url_cache = {}
+        self._load_all_mappings()
         print(f"ResultFormatter initialized w/: {file_map}")
+    
+    def _load_all_mappings(self):
+        try:
+            print("Loading file mappings...")
+            
+            # read file exactly as the original indexer would have
+            with open(self.file_mapping_path, 'r') as f:
+                while True:
+                    current_pos = f.tell()  # get position before reading
+                    line = f.readline()
+                    
+                    if not line:  # End of file
+                        break
+                        
+                    line = line.strip()
+                    if ' ==> ' in line:
+                        file_path, url = line.split(' ==> ', 1)
+                        self.url_cache[str(current_pos)] = url
+            
+            print(f"Loaded {len(self.url_cache)} URL mappings")
+            sample_keys = sorted([int(k) for k in self.url_cache.keys()])[:10]
+            print(f"Sample file IDs: {sample_keys}")
+                    
+        except FileNotFoundError:
+            print(f"Warning: {self.file_mapping_path} not found")
+        except Exception as e:
+            print(f"Error loading URL mapping: {e}")
     
     def get_url_for_file_id(self, file_id):
         # reads existing FileID_FilePath.txt to get URL for file_id
-        try:
-            with open(self.file_mapping_path, 'r') as f:
-                # seek to the byte position
-                f.seek(int(file_id))
-                line = f.readline().strip()
-
-                if ' ==> ' in line:
-                    file_path, url = line.split(' ==> ', 1)
-                    return url
-                else:
-                    return f"URL not found for file_id: {file_id}"
-                    
-        except FileNotFoundError:
-            return f"File mapping not found: {self.file_mapping_path}"
-        except Exception as e:
-            return f"Error reading file_id {file_id}: {str(e)}"
+        return self.url_cache.get(str(file_id))
     
     def sort_results_by_relevance(self, search_results):
 
@@ -126,6 +135,32 @@ class ResultFormatter:
         
         return sorted_results
     
+    def get_valid_results(self, search_results, max_results=5):
+        if not search_results:
+            return []
+        
+        # show what file IDs we're looking for
+        file_ids = list(search_results.keys())
+        print(f"Search found file IDs: {file_ids[:10]}...")  # Show first 10
+        
+        # sort by relevance first
+        sorted_results = sorted(search_results.items(), 
+                              key=lambda item: item[1], reverse=True)
+        
+        valid_results = []
+        found_count = 0
+        
+        for file_id, frequency in sorted_results:
+            url = self.get_url_for_file_id(file_id)
+            if url:  # only add if URL was found
+                valid_results.append((file_id, frequency, url))
+                found_count += 1
+                if len(valid_results) >= max_results:
+                    break
+        
+        print(f"Found {found_count} valid results out of {len(search_results)} total")
+        return valid_results
+    
     def formatted_results(self, search_results, query, max_results=5):
     
         # formats search results, returning formatted string with top URLs
@@ -136,14 +171,17 @@ class ResultFormatter:
             output_lines.append("No results found.")
             return "\n".join(output_lines)
         
-        # sorting results by relevance
-        sorted_results = self.sort_results_by_relevance(search_results)
+        # get valid results only
+        valid_results = self.get_valid_results(search_results, max_results)
+        
+        if not valid_results:
+            output_lines.append("No valid results found.")
+            return "\n".join(output_lines)
         
         # adding top URLs
-        output_lines.append(f"Top {min(max_results, len(sorted_results))} URLs:")
+        output_lines.append(f"Top {len(valid_results)} URLs:")
         
-        for i, (file_id, frequency) in enumerate(sorted_results[:max_results], 1):
-            url = self.get_url_for_file_id(file_id)
+        for i, (file_id, frequency, url) in enumerate(valid_results, 1):
             output_lines.append(f"{i}. {url}")
         
         return "\n".join(output_lines)
@@ -167,34 +205,7 @@ class ResultFormatter:
         except Exception as e:
             print(f"Error creating report file: {e}")
             return False
-    
-
-    def search_demo(self, search_function=None):
         
-        # testing search implementation
-        print("\n" + "="*50)
-        print("SEARCH DEMO")
-        print("="*50)
-        
-        if search_function is None:
-            print("Search function was not succcessfully connected. Try again.")
-            return
-        else:
-            # connection successful
-            print("Enter queries (q to quit):")
-            
-            while True:
-                query = input("Search> ").strip()
-                if query.lower() in ['quit', 'exit', 'q']:
-                    break
-                elif query:
-                    # utilizes search to display results
-                    results = search_function(query)
-                    formatted = self.formatted_results(results, query, max_results=10)
-                    print(formatted)
-                else:
-                    print("Not in indexed queries. Try another term: ")
-
 def Gui_search(query):
     all_results = []
 
@@ -205,40 +216,3 @@ def Gui_search(query):
     formatted_result = formatter.formatted_results(results, query)
     all_results.append(formatted_result)
     return all_results
-
-def test_search():
-    """
-    test search logic with the M2 required queries
-    """
-    search = SearchLogic()
-    formatter = ResultFormatter()
-    
-    # test queries
-    test_queries = [
-        "cristina lopes",
-        "machine learning", 
-        "ACM",
-        "master of software engineering"
-    ]
-    
-    print("M2 Search Testing")
-    print("="*40)
-    
-    all_results = []
-    
-    for query in test_queries:
-        print(f"\nQuery: '{query}'")
-        print("-" * 20)
-        
-        results = search.boolean_and_search(query)
-        formatted_result = formatter.formatted_results(results, query)
-        print(formatted_result)
-        all_results.append(formatted_result)
-    
-    formatter.create_report_file(all_results)
-    
-    # run search demo
-    formatter.search_demo(search.boolean_and_search)
-
-if __name__ == "__main__":
-    test_search()
