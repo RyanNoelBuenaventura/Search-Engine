@@ -1,0 +1,7 @@
+M3 Search Engine Report
+========================================
+Number of indexed documents: 43069
+Number of unique tokens: 5248249
+Total index size: 78330.86 KB
+Memory-efficient processing: 11 partial indexes created
+----------------------------------------
